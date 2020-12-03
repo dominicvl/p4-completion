@@ -360,7 +360,11 @@ __p4_help_keywords="simple commands charset environment filetypes jobview revisi
 # Takes one argument
 # 1: The Perforce environment variable to return
 __p4_var() {
-    echo $(command p4 set $1 | awk '{split($0,a,"="); print a[2]}')
+    key=$1
+    #echo $(command p4 set $1 | awk '{split($0,a,"="); print a[2]}') # original
+    #  call p4 set with name of variable, then awk keeps first word in output
+    #  and sed removes the key (e.g P4CLIENT=, P4PORT=, ...)
+    echo $(command p4 set $key | awk '{ print $1}' | sed -e "s|$key.||" )
 }
 
 __p4_vars() {
@@ -410,7 +414,7 @@ __p4_changes() {
 
 __p4_mychanges() {
     local client=$(__p4_var P4CLIENT)
-    local user=$(__p4_var P4USER)
+    local user=$(command whoami)
     local changes="command p4 changes -m 10 "
 
     [ -n "$1" ] && changes="$changes -s $1 "
@@ -483,7 +487,7 @@ __p4_keys() {
 _p4_add() {
     case "$prev" in
         -c)
-            __p4_complete "$(__p4_mychanges pending)"
+            __p4_complete "$(__p4_mychanges pending) 1"
             return ;;
         -t)
             __p4_complete "$__p4_filetypes"
